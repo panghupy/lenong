@@ -7,6 +7,7 @@ from django.http import HttpResponse
 import hashlib
 
 
+
 # 自定义加密算法
 def doPwd(password):
     sha = hashlib.sha1()
@@ -15,7 +16,15 @@ def doPwd(password):
     return pwd
 
 
+# 自定义登录，用来存储session
+def login(request, user):
+    request.session['user_id'] = user.id
 
+
+# 自定义用户注销
+def logout(request):
+    request.session.flush()
+    return redirect(reverse('goods:index'))
 
 
 class UserRegister(View):
@@ -43,18 +52,16 @@ class UserLogin(View):
     def post(self, request):
         uname = request.POST.get('uname')
         upassword = request.POST.get('pwd')
-        user = UserInfo.objects.get(uname=uname)
+        try:
+            user = UserInfo.objects.get(uname=uname)
+        except:
+            user = None
         if user:
             upassword = doPwd(upassword)
             if user.upassword == upassword:
+                login(request, user)
                 return redirect(reverse('goods:index'))
             else:
                 return HttpResponse('密码错误')
         else:
             return HttpResponse('用户名不存在')
-
-
-
-
-
-
